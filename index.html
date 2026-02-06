@@ -1,0 +1,57 @@
+<!-- Aggiungi PapaParse per leggere il CSV -->
+<script src="https://cdnjs.cloudflare.com"></script>
+
+<script>
+const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSath0VF9HY6lCA59dpNV8XwGyC9ozs-00qQPjwV9nWG8B1fb2FJPAvY9hkzM16EjcSCicLTXZQrahF/pub?gid=0&single=true&output=csv';
+
+async function caricaDatiDaGoogle() {
+    try {
+        const response = await fetch(GOOGLE_SHEET_CSV_URL);
+        const data = await response.text();
+        
+        Papa.parse(data, {
+            header: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                // Filtra eventuali righe vuote e salva i dati
+                allMotos = results.data.filter(m => m.modello);
+                renderMotos(allMotos);
+            }
+        });
+    } catch (e) {
+        console.error("Errore collegamento Google Sheets:", e);
+    }
+}
+
+// Funzione aggiornata per mostrare anche affidabilità e vendite
+function renderMotos(data) {
+    const grid = document.getElementById('moto-results');
+    grid.innerHTML = data.map(moto => `
+        <div class="moto-card">
+            <div class="spec-info">
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#888">${moto.marca}</span>
+                    <span class="badge-patente">${moto.patente}</span>
+                </div>
+                <h3>${moto.modello}</h3>
+                <div class="stats">
+                    <p>🔧 Affidabilità: <b>${moto.affidabilita}/5</b></p>
+                    <p>📈 Vendite: <b>${moto.vendite_annue.toLocaleString()} unità</b></p>
+                    <p>⚙️ Motore: <b>${moto.cilindrata}cc (${moto.cv} CV)</b></p>
+                </div>
+                <div class="price-box">€ ${moto.prezzo.toLocaleString()}</div>
+                <button onclick="mostraStoria('${moto.marca}', '${moto.storia_brand.replace(/'/g, "\\'")}')" 
+                        style="background:transparent; border:1px solid var(--red); color:white; cursor:pointer; margin-top:10px; width:100%; padding:5px;">
+                    Leggi Storia Brand
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function mostraStoria(brand, storia) {
+    alert("STORIA DI " + brand + ":\n\n" + storia);
+}
+
+window.onload = caricaDatiDaGoogle;
+</script>
